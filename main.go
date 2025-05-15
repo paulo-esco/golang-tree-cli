@@ -28,18 +28,11 @@ adaptive slash
 
 */
 
-func main() {
-	out := os.Stdout
-	if !(len(os.Args) == 2 || len(os.Args) == 3) {
-		panic("usage go run main.go . [-f]")
-	}
-	path := os.Args[1]
-	printFiles := len(os.Args) == 3 && os.Args[2] == "-f"
-	err := dirTree(out, path, printFiles)
-	if err != nil {
-		panic(err.Error())
-	}
-}
+type ByName []os.DirEntry
+
+func (n ByName) Len() int           { return len(n) }
+func (n ByName) Swap(i, j int)      { n[i], n[j] = n[j], n[i] }
+func (n ByName) Less(i, j int) bool { return n[i].Name() < n[j].Name() }
 
 func dirTree(out io.Writer, path string, printFiles bool) error {
 	lines, err := makeBranch(path, printFiles)
@@ -63,19 +56,26 @@ func dirTree(out io.Writer, path string, printFiles bool) error {
 	return nil
 }
 
-type ByName []os.DirEntry
-
-func (n ByName) Len() int           { return len(n) }
-func (n ByName) Swap(i, j int)      { n[i], n[j] = n[j], n[i] }
-func (n ByName) Less(i, j int) bool { return n[i].Name() < n[j].Name() }
+func main() {
+	out := os.Stdout
+	if !(len(os.Args) == 2 || len(os.Args) == 3) {
+		panic("usage go run main.go . [-f]")
+	}
+	path := os.Args[1]
+	printFiles := len(os.Args) == 3 && os.Args[2] == "-f"
+	err := dirTree(out, path, printFiles)
+	if err != nil {
+		panic(err.Error())
+	}
+}
 
 func makeBranch(path string, printFiles bool) ([]string, error) {
 	entries, err := os.ReadDir(path)
-	sort.Sort(ByName(entries))
 
 	if err != nil {
 		return nil, err
 	}
+	sort.Sort(ByName(entries))
 
 	lines := make([]string, 0)
 
